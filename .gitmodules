@@ -1,0 +1,3 @@
+[submodule "lib/zigstr"]
+	path = lib/zigstr
+	url = git@github.com:pfivea/zigstr
