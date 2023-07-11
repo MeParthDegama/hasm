@@ -1,6 +1,6 @@
 const std = @import("std");
 const String = @import("zigstr").String;
-const x86_64 = @import("./x86_64/x86_64.zig");
+const x86_64 = @import("./x86_64/x86_64.zig").x86_64;
 
 pub fn main() !void {
     var args = try getArgs();
@@ -13,9 +13,13 @@ pub fn main() !void {
     var arg1 = args[1];
 
     if (arg1.equString("info")) {
-        x86_64.print_info();
+        x86_64.printInfo();
     } else {
-        std.debug.print("TODO...\n", .{});
+        var x86_64_bin = x86_64.init();
+        defer x86_64_bin.deinit();
+
+        x86_64_bin.setRootSrcFile(arg1);
+        try x86_64_bin.assemble();
     }
 }
 
