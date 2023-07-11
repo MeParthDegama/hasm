@@ -1,5 +1,4 @@
-// x86_64 / amd64 assembler interface
-
+/// x86_64 / amd64 assembler interface
 const std = @import("std");
 const printInfoFn = @import("./info.zig").printInfo;
 const String = @import("zigstr").String;
@@ -21,8 +20,8 @@ pub const x86_64 = struct {
         slef.root_src_file = src_file_path;
     }
 
-    pub fn assemble(_: *Self) !void {
-        try assembleAsm();
+    pub fn assemble(self: *Self) !void {
+        try assembleAsm(self.root_src_file);
     }
 
     pub fn printInfo() void {

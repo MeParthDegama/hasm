@@ -1,5 +1,4 @@
 /// print x86_64 / amd64 info
-
 const std = @import("std");
 
 pub fn printInfo() void {

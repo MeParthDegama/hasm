@@ -10,19 +10,19 @@ pub fn build(b: *std.Build) void {
     });
 
     // hasm executable
-    const exe = b.addExecutable(.{
+    const elf = b.addExecutable(.{
         .name = "hasm",
         .root_source_file = .{ .path = "./src/hasm.zig" },
         .target = target,
         .optimize = optimize,
     });
 
-    exe.addModule("zigstr", zigstr);
+    elf.addModule("zigstr", zigstr);
 
     // install
-    b.installArtifact(exe);
+    b.installArtifact(elf);
 
-    const run_cmd = b.addRunArtifact(exe);
+    const run_cmd = b.addRunArtifact(elf);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);
