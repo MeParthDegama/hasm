@@ -18,14 +18,10 @@ pub const Lexer = struct {
         };
     }
 
-    pub fn next(_: Self) ?usize {
-        if (currIndex == fileBuffer.len) {
-            return null;
+    pub fn next(_: Self) void {
+        while (nextChar()) |c| {
+            std.debug.print("{}", .{c});
         }
-
-        var c = currIndex;
-        currIndex += 1;
-        return c;
     }
 
     fn openFile(file_path: String) void {
@@ -33,6 +29,15 @@ pub const Lexer = struct {
             std.debug.print("file not found...\n", .{});
             std.os.exit(2);
         };
+    }
+
+    fn nextChar() ?u8 {
+        if (currIndex == fileBuffer.len) {
+            return null;
+        }
+        var nIndex = currIndex;
+        currIndex += 1;
+        return fileBuffer[nIndex];
     }
 };
 
