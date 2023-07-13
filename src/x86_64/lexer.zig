@@ -1,7 +1,8 @@
 /// lexer
 const std = @import("std");
-
 const String = @import("zigstr").String;
+
+const Log = @import("../log.zig").Log;
 
 pub const Lexer = struct {
     src_file: String,
@@ -10,7 +11,11 @@ pub const Lexer = struct {
     var fileBuffer: []u8 = undefined;
     var currIndex: usize = 0;
 
+    var log: Log = undefined;
+
     pub fn init(file_name: String) Self {
+        log = Log.init();
+
         openFile(file_name);
 
         return Self{
@@ -27,7 +32,8 @@ pub const Lexer = struct {
     fn openFile(file_path: String) void {
         fileBuffer = std.fs.cwd().readFileAlloc(std.heap.page_allocator, file_path.get(), 1024 * 1000) catch |e| {
             if (e == error.FileNotFound) {
-                std.debug.print("file not found...\n", .{});
+                log.err("file not found...", .{});
+                log.print();
                 std.os.exit(2);
             } else {
                 std.debug.print("other error...\n", .{});
