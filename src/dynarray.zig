@@ -22,7 +22,7 @@ pub fn make_Array(comptime t: type) type {
         pub fn push(self: *Self, m: t) void {
             if (self.ptr) |ptr| {
                 self.ptr = allocater.realloc(ptr, ptr.len + 1) catch unreachable;
-                self.ptr.?[self.ptr.?.len + 1] = m;
+                self.ptr.?[self.ptr.?.len - 1] = m;
             } else {
                 self.ptr = allocater.alloc(t, 1) catch unreachable;
                 self.ptr.?[0] = m;

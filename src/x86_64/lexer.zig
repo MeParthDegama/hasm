@@ -55,11 +55,23 @@ pub const Lexer = struct {
                 }
             }
 
-            if (currToken) |*ct| {
-                ct.addChar(c);
-            } else {
-                currToken = String.init();
-                currToken.?.addChar(c);
+            switch (c) {
+                ' ' => {
+                    var to = Token{
+                        .token_value = currToken.?,
+                        .token_type = .TokenUnknow,
+                    };
+                    token_stack.push(to);
+                    currToken = String.init();
+                },
+                else => {
+                    if (currToken) |*ct| {
+                        ct.addChar(c);
+                    } else {
+                        currToken = String.init();
+                        currToken.?.addChar(c);
+                    }
+                },
             }
         } else {
             if (currToken) |ct| {
