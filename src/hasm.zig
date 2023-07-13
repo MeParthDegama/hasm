@@ -1,13 +1,17 @@
 const std = @import("std");
 const String = @import("zigstr").String;
+const Log = @import("./log.zig").Log;
+
 const x86_64 = @import("./x86_64/x86_64.zig").x86_64;
 
 pub fn main() !void {
     var args = try getArgs();
 
     if (args.len < 2) {
-        std.debug.print("input file error...\n", .{});
-        return;
+        var l = Log.init();
+        l.err("input file error...", .{});
+        l.print();
+        std.os.exit(2);
     }
 
     var arg1 = args[1];
