@@ -2,6 +2,9 @@
 const std = @import("std");
 
 pub const Log = struct {
+    err_count: i32,
+    warn_count: i32,
+
     const Self = @This();
 
     const LogType = enum {
@@ -23,7 +26,10 @@ pub const Log = struct {
         allocater = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         a = allocater.allocator();
 
-        return Self{};
+        return Self{
+            .err_count = 0,
+            .warn_count = 0,
+        };
     }
 
     pub fn deinit() void {
@@ -55,11 +61,13 @@ pub const Log = struct {
         }
     }
 
-    pub fn err(_: *Self, comptime fmt: []const u8, args: anytype) void {
+    pub fn err(s: *Self, comptime fmt: []const u8, args: anytype) void {
+        s.err_count += 1;
         addLog(fmt, args, LogType.Err);
     }
 
-    pub fn warn(_: *Self, comptime fmt: []const u8, args: anytype) void {
+    pub fn warn(s: *Self, comptime fmt: []const u8, args: anytype) void {
+        s.warn_count += 1;
         addLog(fmt, args, LogType.Warn);
     }
 

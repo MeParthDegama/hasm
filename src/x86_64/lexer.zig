@@ -4,6 +4,13 @@ const String = @import("zigstr").String;
 
 const Log = @import("../log.zig").Log;
 
+const TokenType = enum {};
+
+const Token = struct {
+    token_value: String,
+    token_type: TokenType,
+};
+
 pub const Lexer = struct {
     src_file: String,
 
@@ -25,7 +32,7 @@ pub const Lexer = struct {
 
     pub fn next(_: Self) void {
         while (nextChar()) |c| {
-            std.debug.print("{}", .{c});
+            std.debug.print("{c}", .{c});
         }
     }
 
@@ -33,12 +40,11 @@ pub const Lexer = struct {
         fileBuffer = std.fs.cwd().readFileAlloc(std.heap.page_allocator, file_path.get(), 1024 * 1000) catch |e| {
             if (e == error.FileNotFound) {
                 log.err("file not found...", .{});
-                log.print();
-                std.os.exit(2);
             } else {
-                std.debug.print("other error...\n", .{});
-                std.os.exit(2);
+                log.err("file open error...", .{});
             }
+
+            return undefined;
         };
     }
 
@@ -49,6 +55,10 @@ pub const Lexer = struct {
         var nIndex = currIndex;
         currIndex += 1;
         return fileBuffer[nIndex];
+    }
+
+    pub fn lexerLog(_: Self) Log {
+        return log;
     }
 };
 
