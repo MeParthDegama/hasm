@@ -25,9 +25,14 @@ pub const Lexer = struct {
     }
 
     fn openFile(file_path: String) void {
-        fileBuffer = std.fs.cwd().readFileAlloc(std.heap.page_allocator, file_path.get(), 1024 * 1000) catch {
-            std.debug.print("file not found...\n", .{});
-            std.os.exit(2);
+        fileBuffer = std.fs.cwd().readFileAlloc(std.heap.page_allocator, file_path.get(), 1024 * 1000) catch |e| {
+            if (e == error.FileNotFound) {
+                std.debug.print("file not found...\n", .{});
+                std.os.exit(2);
+            } else {
+                std.debug.print("other error...\n", .{});
+                std.os.exit(2);
+            }
         };
     }
 
