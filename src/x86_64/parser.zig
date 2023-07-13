@@ -3,6 +3,7 @@ const std = @import("std");
 const String = @import("zigstr").String;
 
 const Lexer = @import("./lexer.zig").Lexer;
+const Token = @import("./lexer.zig").Token;
 
 pub const Parser = struct {
     lexer: Lexer,
@@ -16,15 +17,30 @@ pub const Parser = struct {
     }
 
     pub fn parse(s: Self) void {
-        s.next();
+        while (s.next()) {}
     }
 
-    pub fn next(s: Self) void {
-        s.lexer.next();
+    pub fn next(s: Self) bool {
+        var tokens = s.lexer.next();
 
         if (s.lexer.lexerLog().err_count != 0) {
             s.lexer.lexerLog().print();
+            std.os.exit(2);
         }
+
+        if (tokens) |toks| {
+            printToken(toks);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    pub fn printToken(toks: []Token) void {
+        for (toks) |t| {
+            std.debug.print("[{s}->{}]", .{t.token_value.get(), t.token_type});
+        }
+        std.debug.print("\n", .{});
     }
 
     pub fn deinit(_: Self) void {

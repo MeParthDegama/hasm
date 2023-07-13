@@ -3,10 +3,13 @@ const std = @import("std");
 const String = @import("zigstr").String;
 
 const Log = @import("../log.zig").Log;
+const make_Array = @import("../dynarray.zig").make_Array;
 
-const TokenType = enum {};
+pub const TokenType = enum {
+    TokenUnknow,
+};
 
-const Token = struct {
+pub const Token = struct {
     token_value: String,
     token_type: TokenType,
 };
@@ -30,10 +33,48 @@ pub const Lexer = struct {
         };
     }
 
-    pub fn next(_: Self) void {
+    pub fn next(_: Self) ?[]Token {
+        comptime var d_array = make_Array(Token);
+        var token_stack = d_array.init();
+
+        var currToken: ?String = null;
+
         while (nextChar()) |c| {
-            std.debug.print("{c}", .{c});
+            if (c == '\n') {
+                if (currToken) |ct| {
+                    var to = Token{
+                        .token_value = ct,
+                        .token_type = .TokenUnknow,
+                    };
+                    token_stack.push(to);
+                }
+                if (token_stack.ptr) |ptr| {
+                    return ptr;
+                } else {
+                    continue;
+                }
+            }
+
+            if (currToken) |*ct| {
+                ct.addChar(c);
+            } else {
+                currToken = String.init();
+                currToken.?.addChar(c);
+            }
+        } else {
+            if (currToken) |ct| {
+                var to = Token{
+                    .token_value = ct,
+                    .token_type = .TokenUnknow,
+                };
+                token_stack.push(to);
+            }
+            if (token_stack.ptr) |ptr| {
+                return ptr;
+            }
         }
+
+        return null;
     }
 
     fn openFile(file_path: String) void {
