@@ -17,7 +17,9 @@ pub const Parser = struct {
     }
 
     pub fn parse(s: Self) void {
-        while (s.next()) {}
+        while (s.next()) {
+        
+        }
     }
 
     pub fn next(s: Self) bool {

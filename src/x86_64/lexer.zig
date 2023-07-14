@@ -37,6 +37,8 @@ pub const Lexer = struct {
         };
     }
 
+    var currLine: usize = 1;
+
     pub fn next(_: Self) ?[]Token {
         comptime var d_array = make_Array(Token);
         var token_stack = d_array.init();
@@ -45,6 +47,7 @@ pub const Lexer = struct {
 
         while (nextChar()) |c| {
             if (c == '\n') {
+                currLine += 1;
                 if (currToken) |ct| {
                     var to = Token{
                         .token_value = ct,
@@ -142,10 +145,11 @@ pub const Lexer = struct {
                         }
                     }
 
-                    token_stack.push(.{
-                        .token_value = String.init(),
-                        .token_type = .TokenSemiColon,
-                    });
+                    while (nextChar() != '\n') {}
+
+                    if (token_stack.ptr) |ptr| {
+                        return ptr;
+                    }
                 },
 
                 else => {
