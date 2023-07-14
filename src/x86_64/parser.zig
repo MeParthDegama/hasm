@@ -38,7 +38,7 @@ pub const Parser = struct {
 
     pub fn printToken(toks: []Token) void {
         for (toks) |t| {
-            std.debug.print("[{s}->{}]", .{t.token_value.get(), t.token_type});
+            std.debug.print("[{s}->{}]", .{ t.token_value.buffer orelse "nil", t.token_type });
         }
         std.debug.print("\n", .{});
     }

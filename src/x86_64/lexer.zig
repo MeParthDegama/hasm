@@ -7,6 +7,10 @@ const make_Array = @import("../dynarray.zig").make_Array;
 
 pub const TokenType = enum {
     TokenUnknow,
+    TokenModulo,
+    TokenColon,
+    TokenComma,
+    TokenSemiColon,
 };
 
 pub const Token = struct {
@@ -46,7 +50,10 @@ pub const Lexer = struct {
                         .token_value = ct,
                         .token_type = .TokenUnknow,
                     };
-                    token_stack.push(to);
+
+                    if (ct.buffer != null) {
+                        token_stack.push(to);
+                    }
                 }
                 if (token_stack.ptr) |ptr| {
                     return ptr;
@@ -57,13 +64,90 @@ pub const Lexer = struct {
 
             switch (c) {
                 ' ' => {
-                    var to = Token{
-                        .token_value = currToken.?,
-                        .token_type = .TokenUnknow,
-                    };
-                    token_stack.push(to);
-                    currToken = String.init();
+                    if (currToken) |ct| {
+                        if (ct.buffer != null) {
+                            var to = Token{
+                                .token_value = ct,
+                                .token_type = .TokenUnknow,
+                            };
+                            token_stack.push(to);
+                            currToken = String.init();
+                        }
+                    }
                 },
+
+                '%' => {
+                    if (currToken) |ct| {
+                        if (ct.buffer != null) {
+                            var to = Token{
+                                .token_value = ct,
+                                .token_type = .TokenUnknow,
+                            };
+                            token_stack.push(to);
+                            currToken = String.init();
+                        }
+                    }
+
+                    token_stack.push(.{
+                        .token_value = String.init(),
+                        .token_type = .TokenModulo,
+                    });
+                },
+
+                ':' => {
+                    if (currToken) |ct| {
+                        if (ct.buffer != null) {
+                            var to = Token{
+                                .token_value = ct,
+                                .token_type = .TokenUnknow,
+                            };
+                            token_stack.push(to);
+                            currToken = String.init();
+                        }
+                    }
+
+                    token_stack.push(.{
+                        .token_value = String.init(),
+                        .token_type = .TokenColon,
+                    });
+                },
+
+                ',' => {
+                    if (currToken) |ct| {
+                        if (ct.buffer != null) {
+                            var to = Token{
+                                .token_value = ct,
+                                .token_type = .TokenUnknow,
+                            };
+                            token_stack.push(to);
+                            currToken = String.init();
+                        }
+                    }
+
+                    token_stack.push(.{
+                        .token_value = String.init(),
+                        .token_type = .TokenComma,
+                    });
+                },
+
+                ';' => {
+                    if (currToken) |ct| {
+                        if (ct.buffer != null) {
+                            var to = Token{
+                                .token_value = ct,
+                                .token_type = .TokenUnknow,
+                            };
+                            token_stack.push(to);
+                            currToken = String.init();
+                        }
+                    }
+
+                    token_stack.push(.{
+                        .token_value = String.init(),
+                        .token_type = .TokenSemiColon,
+                    });
+                },
+
                 else => {
                     if (currToken) |*ct| {
                         ct.addChar(c);
@@ -75,12 +159,16 @@ pub const Lexer = struct {
             }
         } else {
             if (currToken) |ct| {
-                var to = Token{
-                    .token_value = ct,
-                    .token_type = .TokenUnknow,
-                };
-                token_stack.push(to);
+                if (currToken.?.buffer != null) {
+                    var to = Token{
+                        .token_value = ct,
+                        .token_type = .TokenUnknow,
+                    };
+                    token_stack.push(to);
+                    currToken = String.init();
+                }
             }
+
             if (token_stack.ptr) |ptr| {
                 return ptr;
             }
