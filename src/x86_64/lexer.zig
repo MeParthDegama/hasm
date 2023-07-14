@@ -42,6 +42,7 @@ pub const Lexer = struct {
     pub fn next(_: Self) ?[]Token {
         comptime var d_array = make_Array(Token);
         var token_stack = d_array.init();
+        std.debug.print("{}\n", .{@TypeOf(token_stack)});
 
         var currToken: ?String = null;
 
@@ -179,6 +180,10 @@ pub const Lexer = struct {
         }
 
         return null;
+    }
+
+    fn addToken(s: make_Array(Token)) void {
+        _ = s;
     }
 
     fn openFile(file_path: String) void {
