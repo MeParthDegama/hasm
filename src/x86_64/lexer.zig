@@ -1,9 +1,9 @@
 /// lexer
 const std = @import("std");
 const String = @import("zigstr").String;
-
 const Log = @import("../log.zig");
 const initArray = @import("../dynarray.zig").initArray;
+const config = @import("../config.zig");
 
 pub const TokenType = enum {
     TokenUnknow,
@@ -199,7 +199,7 @@ pub const Lexer = struct {
         var err_log = Log.Log.init();
         err_log.addLog(fmt, args, .Err);
         err_log.print();
-        std.os.exit(2);
+        std.os.exit(comptime if (config.dev_mode) 0 else 2);
     }
 };
 
