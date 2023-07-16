@@ -11,6 +11,7 @@ pub const Parser = struct {
     lexer: Lexer,
     var log: Log.Log = undefined;
     var err_count: i64 = 0;
+    var warn_count: i64 = 0;
 
     const Self = @This();
 
@@ -24,8 +25,8 @@ pub const Parser = struct {
 
     pub fn parse(self: *Self) void {
         while (self.next()) {}
+        log.print();
         if (err_count != 0) {
-            log.print();
             common.errExit();
         }
     }
@@ -36,6 +37,11 @@ pub const Parser = struct {
         if (tokens_info.err) |err| {
             log.pushLog(err);
             err_count += 1;
+        }
+
+        if (tokens_info.warn) |warn| {
+            log.pushLog(warn);
+            warn_count += 1;
         }
 
         if (tokens_info.tokens) |toks| {

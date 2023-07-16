@@ -8,6 +8,7 @@ const common = @import("../common.zig");
 pub const TokenType = enum {
     TokenUnknow,
     TokenModulo,
+    TokenLabel,
     TokenColon,
     TokenComma,
     TokenSemiColon,
@@ -22,6 +23,7 @@ pub const Token = struct {
 pub const TokensInfo = struct {
     tokens: ?[]Token,
     err: ?Log.LogInfo,
+    warn: ?Log.LogInfo,
 };
 
 pub const Lexer = struct {
@@ -41,26 +43,39 @@ pub const Lexer = struct {
 
     var curr_line: usize = 1;
 
-    pub fn next(_: Self) TokensInfo {
+    var err: ?Log.LogInfo = null;
+    var warn: ?Log.LogInfo = null;
+
+    var curr_token: ?String = null;
+    var string_is_start = false;
+    var add_space_after_string = true;
+
+    pub fn next(self: *Self) TokensInfo {
+        err = null;
+        warn = null;
+
         comptime var d_array = initArray(Token);
         var token_stack = d_array.init();
 
-        var curr_token: ?String = null;
-
-        var string_is_start = false;
-
-        var err: ?Log.LogInfo = null;
+        curr_token = null;
+        string_is_start = false;
+        add_space_after_string = true;
 
         while (nextChar()) |c| {
             if (c == '\n') {
+                if (string_is_start) {
+                    genErr("{s}:{} string is start but not end", .{ self.src_file.get(), curr_line });
+                }
+
                 curr_line += 1;
 
-                addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
                 if (token_stack.ptr) |ptr| {
                     return .{
                         .tokens = ptr,
                         .err = err,
+                        .warn = warn,
                     };
                 } else {
                     continue;
@@ -81,28 +96,27 @@ pub const Lexer = struct {
 
             switch (c) {
                 ' ' => {
-                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    add_space_after_string = true;
+                    self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
                 },
 
                 '%' => {
-                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
-                    addNullToken(&token_stack, .TokenModulo);
+                    self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    self.addNullToken(&token_stack, .TokenModulo);
                 },
 
                 ':' => {
-                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
-                    addNullToken(&token_stack, .TokenColon);
+                    self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    self.addNullToken(&token_stack, .TokenColon);
                 },
 
                 ',' => {
-                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
-                    addNullToken(&token_stack, TokenType.TokenComma);
-
-                    err = makeErr("{}: , test err", .{curr_line});
+                    self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    self.addNullToken(&token_stack, TokenType.TokenComma);
                 },
 
                 ';' => {
-                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
                     while (nextChar() != '\n') {} else {
                         curr_line += 1;
@@ -112,14 +126,28 @@ pub const Lexer = struct {
                         return .{
                             .tokens = ptr,
                             .err = err,
+                            .warn = warn,
                         };
                     }
                 },
 
                 '"' => {
                     string_is_start = !string_is_start;
-                    if (!string_is_start) {
-                        addCurrentToken(&token_stack, &curr_token, .TokenString);
+
+                    if (string_is_start) {
+                        if (curr_token) |ct| {
+                            if (ct.buffer) |_| {
+                                genErr("{s}:{} string is directly start after other token", .{ self.src_file.get(), curr_line });
+                            }
+                        }
+                    } else {
+                        if (curr_token) |ct| {
+                            if (ct.buffer) |_| {} else {
+                                genWarn("{s}:{} empty string is not recognized", .{ self.src_file.get(), curr_line });
+                            }
+                        }
+                        self.addCurrentToken(&token_stack, &curr_token, .TokenString);
+                        add_space_after_string = false;
                     }
                 },
 
@@ -133,12 +161,13 @@ pub const Lexer = struct {
                 },
             }
         } else {
-            addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+            self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
             if (token_stack.ptr) |ptr| {
                 return .{
                     .tokens = ptr,
                     .err = err,
+                    .warn = warn,
                 };
             }
         }
@@ -146,15 +175,20 @@ pub const Lexer = struct {
         return .{
             .tokens = null,
             .err = err,
+            .warn = warn,
         };
     }
 
-    fn addCurrentToken(token_stack: *initArray(Token), current_token: *?String, token_type: TokenType) void {
+    fn addCurrentToken(self: *Self, token_stack: *initArray(Token), current_token: *?String, token_type: TokenType) void {
         if (current_token.*) |ct| {
-            if (ct.buffer != null) {
+            if (ct.buffer) |buf| {
+                if (!add_space_after_string) {
+                    genErr("{s}:{} string is directly end before other token", .{ self.src_file.get(), curr_line });
+                }
+                var t = if (buf[0] == '$') .TokenLabel else token_type;
                 var to = Token{
                     .token_value = ct,
-                    .token_type = token_type,
+                    .token_type = t,
                 };
                 token_stack.push(to);
                 current_token.* = String.init();
@@ -162,7 +196,8 @@ pub const Lexer = struct {
         }
     }
 
-    fn addNullToken(token_stack: *initArray(Token), token_type: TokenType) void {
+    fn addNullToken(_: Self, token_stack: *initArray(Token), token_type: TokenType) void {
+        add_space_after_string = true;
         token_stack.push(.{
             .token_value = String.init(),
             .token_type = token_type,
@@ -190,9 +225,16 @@ pub const Lexer = struct {
         };
     }
 
-    fn makeErr(comptime fmt: []const u8, args: anytype) Log.LogInfo {
+    fn genErr(comptime fmt: []const u8, args: anytype) void {
         var err_log = Log.Log.init();
-        return err_log.makeLog(fmt, args, .Err);
+        var l = err_log.makeLog(fmt, args, .Err);
+        err = if (err) |_| err else l;
+    }
+
+    fn genWarn(comptime fmt: []const u8, args: anytype) void {
+        var warn_log = Log.Log.init();
+        var l = warn_log.makeLog(fmt, args, .Warn);
+        warn = if (warn) |_| err else l;
     }
 
     fn printErrorAndExit(comptime fmt: []const u8, args: anytype) void {
