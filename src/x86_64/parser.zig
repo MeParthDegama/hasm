@@ -1,7 +1,7 @@
 /// parser
 const std = @import("std");
 const String = @import("zigstr").String;
-const Log = @import("../log.zig");
+const Log = @import("ziglog");
 
 const Lexer = @import("./lexer.zig").Lexer;
 const Token = @import("./lexer.zig").Token;

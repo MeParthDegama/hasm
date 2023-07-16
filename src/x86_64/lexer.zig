@@ -1,8 +1,8 @@
 /// lexer
 const std = @import("std");
 const String = @import("zigstr").String;
-const Log = @import("../log.zig");
-const initArray = @import("../dynarray.zig").initArray;
+const Log = @import("ziglog");
+const initArray = @import("dynarray").initArray;
 const config = @import("../config.zig");
 
 pub const TokenType = enum {

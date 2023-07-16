@@ -9,6 +9,16 @@ pub fn build(b: *std.Build) void {
         .source_file = .{ .path = "./lib/zigstr/lib/str.zig" },
     });
 
+    // dynarray libeary
+    const dynarray = b.addModule("dynarray", .{
+        .source_file = .{ .path = "./lib/dynarray/dynarray.zig" },
+    });
+
+    // ziglog libeary
+    const ziglog = b.addModule("ziglog", .{
+        .source_file = .{ .path = "./lib/ziglog/log.zig" },
+    });
+
     // hasm executable
     const elf = b.addExecutable(.{
         .name = "hasm",
@@ -18,6 +28,8 @@ pub fn build(b: *std.Build) void {
     });
 
     elf.addModule("zigstr", zigstr);
+    elf.addModule("dynarray", dynarray);
+    elf.addModule("ziglog", ziglog);
 
     // install
     b.installArtifact(elf);

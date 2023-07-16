@@ -1,6 +1,6 @@
 const std = @import("std");
 const String = @import("zigstr").String;
-const Log = @import("./log.zig").Log;
+const Log = @import("ziglog").Log;
 
 const x86_64 = @import("./x86_64/x86_64.zig").x86_64;
 
