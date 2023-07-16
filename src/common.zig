@@ -3,5 +3,9 @@ const std = @import("std");
 const config = @import("./config.zig");
 
 pub fn errExit() void {
-    std.os.exit(comptime if (config.dev_mode) 0 else 2);
+    if (comptime config.dev_mode) {
+        std.debug.print("dev: exit with 2\n", .{});
+    } else {
+        std.os.exit(2);
+    }
 }

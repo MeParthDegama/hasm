@@ -2,6 +2,7 @@
 const std = @import("std");
 const String = @import("zigstr").String;
 const Log = @import("ziglog");
+const common = @import("../common.zig");
 
 const Lexer = @import("./lexer.zig").Lexer;
 const Token = @import("./lexer.zig").Token;
@@ -25,6 +26,7 @@ pub const Parser = struct {
         while (self.next()) {}
         if (err_count != 0) {
             log.print();
+            common.errExit();
         }
     }
 
