@@ -1,21 +1,21 @@
 /// print log
 const std = @import("std");
 
+const LogType = enum {
+    Err,
+    Warn,
+};
+
+const LogInfo = struct {
+    buf: []u8,
+    log_type: LogType,
+};
+
 pub const Log = struct {
     err_count: i32,
     warn_count: i32,
 
     const Self = @This();
-
-    const LogType = enum {
-        Err,
-        Warn,
-    };
-
-    const LogInfo = struct {
-        buf: []u8,
-        log_type: LogType,
-    };
 
     var log_stack: ?[]LogInfo = null;
 
@@ -36,13 +36,19 @@ pub const Log = struct {
         allocater.deinit();
     }
 
-    fn addLog(comptime fmt: []const u8, args: anytype, log_type: LogType) void {
+    pub fn makeLog(_: Self, comptime fmt: []const u8, args: anytype, log_type: LogType) LogInfo {
         var log_buf = logFmt(fmt, args);
 
         var l = LogInfo{
             .buf = log_buf,
             .log_type = log_type,
         };
+
+        return l;
+    }
+
+    fn addLog(self: Self, comptime fmt: []const u8, args: anytype, log_type: LogType) void {
+        var l = self.makeLog(fmt, args, log_type);
 
         if (log_stack) |log_s| {
             var stack_ptr = a.realloc(log_s, log_s.len + 1) catch {
@@ -63,12 +69,12 @@ pub const Log = struct {
 
     pub fn err(s: *Self, comptime fmt: []const u8, args: anytype) void {
         s.err_count += 1;
-        addLog(fmt, args, LogType.Err);
+        s.addLog(fmt, args, LogType.Err);
     }
 
     pub fn warn(s: *Self, comptime fmt: []const u8, args: anytype) void {
         s.warn_count += 1;
-        addLog(fmt, args, LogType.Warn);
+        s.addLog(fmt, args, LogType.Warn);
     }
 
     pub fn print(_: Self) void {
