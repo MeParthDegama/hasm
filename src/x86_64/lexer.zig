@@ -3,7 +3,7 @@ const std = @import("std");
 const String = @import("zigstr").String;
 
 const Log = @import("../log.zig").Log;
-const make_Array = @import("../dynarray.zig").make_Array;
+const initArray = @import("../dynarray.zig").initArray;
 
 pub const TokenType = enum {
     TokenUnknow,
@@ -40,16 +40,16 @@ pub const Lexer = struct {
     var currLine: usize = 1;
 
     pub fn next(_: Self) ?[]Token {
-        comptime var d_array = make_Array(Token);
+        comptime var d_array = initArray(Token);
         var token_stack = d_array.init();
-        std.debug.print("{}\n", .{@TypeOf(token_stack)});
+        // std.debug.print("{}\n", .{@TypeOf(token_stack)});
 
-        var currToken: ?String = null;
+        var curr_token: ?String = null;
 
         while (nextChar()) |c| {
             if (c == '\n') {
                 currLine += 1;
-                if (currToken) |ct| {
+                if (curr_token) |ct| {
                     var to = Token{
                         .token_value = ct,
                         .token_type = .TokenUnknow,
@@ -68,83 +68,26 @@ pub const Lexer = struct {
 
             switch (c) {
                 ' ' => {
-                    if (currToken) |ct| {
-                        if (ct.buffer != null) {
-                            var to = Token{
-                                .token_value = ct,
-                                .token_type = .TokenUnknow,
-                            };
-                            token_stack.push(to);
-                            currToken = String.init();
-                        }
-                    }
+                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
                 },
 
                 '%' => {
-                    if (currToken) |ct| {
-                        if (ct.buffer != null) {
-                            var to = Token{
-                                .token_value = ct,
-                                .token_type = .TokenUnknow,
-                            };
-                            token_stack.push(to);
-                            currToken = String.init();
-                        }
-                    }
-
-                    token_stack.push(.{
-                        .token_value = String.init(),
-                        .token_type = .TokenModulo,
-                    });
+                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    addNullToken(&token_stack, .TokenModulo);
                 },
 
                 ':' => {
-                    if (currToken) |ct| {
-                        if (ct.buffer != null) {
-                            var to = Token{
-                                .token_value = ct,
-                                .token_type = .TokenUnknow,
-                            };
-                            token_stack.push(to);
-                            currToken = String.init();
-                        }
-                    }
-
-                    token_stack.push(.{
-                        .token_value = String.init(),
-                        .token_type = .TokenColon,
-                    });
+                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    addNullToken(&token_stack, .TokenColon);
                 },
 
                 ',' => {
-                    if (currToken) |ct| {
-                        if (ct.buffer != null) {
-                            var to = Token{
-                                .token_value = ct,
-                                .token_type = .TokenUnknow,
-                            };
-                            token_stack.push(to);
-                            currToken = String.init();
-                        }
-                    }
-
-                    token_stack.push(.{
-                        .token_value = String.init(),
-                        .token_type = .TokenComma,
-                    });
+                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+                    addNullToken(&token_stack, TokenType.TokenComma);
                 },
 
                 ';' => {
-                    if (currToken) |ct| {
-                        if (ct.buffer != null) {
-                            var to = Token{
-                                .token_value = ct,
-                                .token_type = .TokenUnknow,
-                            };
-                            token_stack.push(to);
-                            currToken = String.init();
-                        }
-                    }
+                    addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
                     while (nextChar() != '\n') {}
 
@@ -154,23 +97,23 @@ pub const Lexer = struct {
                 },
 
                 else => {
-                    if (currToken) |*ct| {
+                    if (curr_token) |*ct| {
                         ct.addChar(c);
                     } else {
-                        currToken = String.init();
-                        currToken.?.addChar(c);
+                        curr_token = String.init();
+                        curr_token.?.addChar(c);
                     }
                 },
             }
         } else {
-            if (currToken) |ct| {
-                if (currToken.?.buffer != null) {
+            if (curr_token) |ct| {
+                if (curr_token.?.buffer != null) {
                     var to = Token{
                         .token_value = ct,
                         .token_type = .TokenUnknow,
                     };
                     token_stack.push(to);
-                    currToken = String.init();
+                    curr_token = String.init();
                 }
             }
 
@@ -182,8 +125,24 @@ pub const Lexer = struct {
         return null;
     }
 
-    fn addToken(s: make_Array(Token)) void {
-        _ = s;
+    fn addCurrentToken(token_stack: *initArray(Token), current_token: *?String, token_type: TokenType) void {
+        if (current_token.*) |ct| {
+            if (ct.buffer != null) {
+                var to = Token{
+                    .token_value = ct,
+                    .token_type = token_type,
+                };
+                token_stack.push(to);
+                current_token.* = String.init();
+            }
+        }
+    }
+
+    fn addNullToken(token_stack: *initArray(Token), token_type: TokenType) void {
+        token_stack.push(.{
+            .token_value = String.init(),
+            .token_type = token_type,
+        });
     }
 
     fn openFile(file_path: String) void {

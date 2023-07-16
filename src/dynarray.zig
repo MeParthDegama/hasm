@@ -1,7 +1,7 @@
 /// dyn array
 const std = @import("std");
 
-pub fn make_Array(comptime t: type) type {
+pub fn initArray(comptime t: type) type {
     return struct {
         ptr: ?[]t,
 
