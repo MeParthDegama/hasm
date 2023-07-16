@@ -2,7 +2,7 @@
 const std = @import("std");
 const String = @import("zigstr").String;
 
-const Log = @import("../log.zig").Log;
+const Log = @import("../log.zig");
 const initArray = @import("../dynarray.zig").initArray;
 
 pub const TokenType = enum {
@@ -11,11 +11,17 @@ pub const TokenType = enum {
     TokenColon,
     TokenComma,
     TokenSemiColon,
+    TokenString,
 };
 
 pub const Token = struct {
     token_value: String,
     token_type: TokenType,
+};
+
+pub const TokensInfo = struct {
+    tokens: ?[]Token,
+    err: ?Log.LogInfo,
 };
 
 pub const Lexer = struct {
@@ -25,11 +31,7 @@ pub const Lexer = struct {
     var fileBuffer: []u8 = undefined;
     var currIndex: usize = 0;
 
-    var log: Log = undefined;
-
     pub fn init(file_name: String) Self {
-        log = Log.init();
-
         openFile(file_name);
 
         return Self{
@@ -37,31 +39,42 @@ pub const Lexer = struct {
         };
     }
 
-    var currLine: usize = 1;
+    var curr_line: usize = 1;
 
-    pub fn next(_: Self) ?[]Token {
+    pub fn next(_: Self) TokensInfo {
         comptime var d_array = initArray(Token);
         var token_stack = d_array.init();
-        // std.debug.print("{}\n", .{@TypeOf(token_stack)});
 
         var curr_token: ?String = null;
 
+        var string_is_start = false;
+
+        var err: ?Log.LogInfo = null;
+
         while (nextChar()) |c| {
             if (c == '\n') {
-                currLine += 1;
-                if (curr_token) |ct| {
-                    var to = Token{
-                        .token_value = ct,
-                        .token_type = .TokenUnknow,
-                    };
+                curr_line += 1;
 
-                    if (ct.buffer != null) {
-                        token_stack.push(to);
-                    }
-                }
+                addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
+
                 if (token_stack.ptr) |ptr| {
-                    return ptr;
+                    return .{
+                        .tokens = ptr,
+                        .err = err,
+                    };
                 } else {
+                    continue;
+                }
+            }
+
+            if (string_is_start) {
+                if (c != '"') {
+                    if (curr_token) |*ct| {
+                        ct.addChar(c);
+                    } else {
+                        curr_token = String.init();
+                        curr_token.?.addChar(c);
+                    }
                     continue;
                 }
             }
@@ -84,15 +97,29 @@ pub const Lexer = struct {
                 ',' => {
                     addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
                     addNullToken(&token_stack, TokenType.TokenComma);
+
+                    err = makeErr("{}: , test err", .{curr_line});
                 },
 
                 ';' => {
                     addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
-                    while (nextChar() != '\n') {}
+                    while (nextChar() != '\n') {} else {
+                        curr_line += 1;
+                    }
 
                     if (token_stack.ptr) |ptr| {
-                        return ptr;
+                        return .{
+                            .tokens = ptr,
+                            .err = err,
+                        };
+                    }
+                },
+
+                '"' => {
+                    string_is_start = !string_is_start;
+                    if (!string_is_start) {
+                        addCurrentToken(&token_stack, &curr_token, .TokenString);
                     }
                 },
 
@@ -106,23 +133,20 @@ pub const Lexer = struct {
                 },
             }
         } else {
-            if (curr_token) |ct| {
-                if (curr_token.?.buffer != null) {
-                    var to = Token{
-                        .token_value = ct,
-                        .token_type = .TokenUnknow,
-                    };
-                    token_stack.push(to);
-                    curr_token = String.init();
-                }
-            }
+            addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
             if (token_stack.ptr) |ptr| {
-                return ptr;
+                return .{
+                    .tokens = ptr,
+                    .err = err,
+                };
             }
         }
 
-        return null;
+        return .{
+            .tokens = null,
+            .err = err,
+        };
     }
 
     fn addCurrentToken(token_stack: *initArray(Token), current_token: *?String, token_type: TokenType) void {
@@ -145,18 +169,6 @@ pub const Lexer = struct {
         });
     }
 
-    fn openFile(file_path: String) void {
-        fileBuffer = std.fs.cwd().readFileAlloc(std.heap.page_allocator, file_path.get(), 1024 * 1000) catch |e| {
-            if (e == error.FileNotFound) {
-                log.err("file not found...", .{});
-            } else {
-                log.err("file open error...", .{});
-            }
-
-            return undefined;
-        };
-    }
-
     fn nextChar() ?u8 {
         if (currIndex == fileBuffer.len) {
             return null;
@@ -166,8 +178,28 @@ pub const Lexer = struct {
         return fileBuffer[nIndex];
     }
 
-    pub fn lexerLog(_: Self) Log {
-        return log;
+    fn openFile(file_path: String) void {
+        fileBuffer = std.fs.cwd().readFileAlloc(std.heap.page_allocator, file_path.get(), 1024 * 1000) catch |e| {
+            if (e == error.FileNotFound) {
+                printErrorAndExit("file not found...", .{});
+            } else {
+                printErrorAndExit("file open error...", .{});
+            }
+
+            return undefined;
+        };
+    }
+
+    fn makeErr(comptime fmt: []const u8, args: anytype) Log.LogInfo {
+        var err_log = Log.Log.init();
+        return err_log.makeLog(fmt, args, .Err);
+    }
+
+    fn printErrorAndExit(comptime fmt: []const u8, args: anytype) void {
+        var err_log = Log.Log.init();
+        err_log.addLog(fmt, args, .Err);
+        err_log.print();
+        std.os.exit(2);
     }
 };
 

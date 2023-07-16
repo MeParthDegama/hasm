@@ -1,36 +1,42 @@
 /// parser
 const std = @import("std");
 const String = @import("zigstr").String;
+const Log = @import("../log.zig");
 
 const Lexer = @import("./lexer.zig").Lexer;
 const Token = @import("./lexer.zig").Token;
 
 pub const Parser = struct {
     lexer: Lexer,
+    var log: Log.Log = undefined;
+    var err_count: i64 = 0;
 
     const Self = @This();
 
     pub fn init(file_name: String) Self {
+        log = Log.Log.init();
+
         return .{
             .lexer = Lexer.init(file_name),
         };
     }
 
-    pub fn parse(s: Self) void {
-        while (s.next()) {
-        
+    pub fn parse(self: *Self) void {
+        while (self.next()) {}
+        if (err_count != 0) {
+            log.print();
         }
     }
 
-    pub fn next(s: Self) bool {
-        var tokens = s.lexer.next();
+    pub fn next(self: *Self) bool {
+        var tokens_info = self.lexer.next();
 
-        if (s.lexer.lexerLog().err_count != 0) {
-            s.lexer.lexerLog().print();
-            std.os.exit(2);
+        if (tokens_info.err) |err| {
+            log.pushLog(err);
+            err_count += 1;
         }
 
-        if (tokens) |toks| {
+        if (tokens_info.tokens) |toks| {
             printToken(toks);
             return true;
         } else {

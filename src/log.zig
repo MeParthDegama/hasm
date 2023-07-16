@@ -1,12 +1,12 @@
 /// print log
 const std = @import("std");
 
-const LogType = enum {
+pub const LogType = enum {
     Err,
     Warn,
 };
 
-const LogInfo = struct {
+pub const LogInfo = struct {
     buf: []u8,
     log_type: LogType,
 };
@@ -47,33 +47,34 @@ pub const Log = struct {
         return l;
     }
 
-    fn addLog(self: Self, comptime fmt: []const u8, args: anytype, log_type: LogType) void {
-        var l = self.makeLog(fmt, args, log_type);
-
+    pub fn pushLog(_: Self, log_info: LogInfo) void {
         if (log_stack) |log_s| {
             var stack_ptr = a.realloc(log_s, log_s.len + 1) catch {
                 std.debug.print("error: log info allocation error...", .{});
                 std.os.exit(2);
             };
             log_stack = stack_ptr;
-            log_stack.?[log_s.len] = l;
+            log_stack.?[log_s.len] = log_info;
         } else {
             var stack_ptr = a.alloc(LogInfo, 1) catch {
                 std.debug.print("error: log info allocation error...", .{});
                 std.os.exit(2);
             };
             log_stack = stack_ptr;
-            log_stack.?[0] = l;
+            log_stack.?[0] = log_info;
         }
     }
 
+    pub fn addLog(self: Self, comptime fmt: []const u8, args: anytype, log_type: LogType) void {
+        var l = self.makeLog(fmt, args, log_type);
+        self.pushLog(l);
+    }
+
     pub fn err(s: *Self, comptime fmt: []const u8, args: anytype) void {
-        s.err_count += 1;
         s.addLog(fmt, args, LogType.Err);
     }
 
     pub fn warn(s: *Self, comptime fmt: []const u8, args: anytype) void {
-        s.warn_count += 1;
         s.addLog(fmt, args, LogType.Warn);
     }
 
