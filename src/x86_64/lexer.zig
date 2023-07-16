@@ -3,7 +3,7 @@ const std = @import("std");
 const String = @import("zigstr").String;
 const Log = @import("ziglog");
 const initArray = @import("dynarray").initArray;
-const config = @import("../config.zig");
+const common = @import("../common.zig");
 
 pub const TokenType = enum {
     TokenUnknow,
@@ -199,7 +199,7 @@ pub const Lexer = struct {
         var err_log = Log.Log.init();
         err_log.addLog(fmt, args, .Err);
         err_log.print();
-        std.os.exit(comptime if (config.dev_mode) 0 else 2);
+        common.errExit();
     }
 };
 
