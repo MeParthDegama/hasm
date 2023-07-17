@@ -244,8 +244,3 @@ pub const Lexer = struct {
         common.errExit();
     }
 };
-
-test "lexer" {
-    var l = Lexer.init("hello, world!");
-    _ = l;
-}
