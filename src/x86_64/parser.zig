@@ -45,7 +45,12 @@ pub const Parser = struct {
 
         if (tokens_info.tokens.ptr) |toks| {
             printToken(toks);
+
+
+            // make loop of parse tokne 
             self.parseLineType(toks);
+            
+            
             tokens_info.tokens.deinit();
             return true;
         } else {
