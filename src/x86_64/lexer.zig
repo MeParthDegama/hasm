@@ -2,7 +2,7 @@
 const std = @import("std");
 const String = @import("zigstr").String;
 const Log = @import("ziglog");
-const initArray = @import("dynarray").initArray;
+const dynArray = @import("dynarray").dynArray;
 const common = @import("../common.zig");
 
 pub const TokenType = enum {
@@ -21,7 +21,7 @@ pub const Token = struct {
 };
 
 pub const TokensInfo = struct {
-    tokens: ?[]Token,
+    tokens: dynArray(Token),
     err: ?Log.LogInfo,
     warn: ?Log.LogInfo,
 };
@@ -54,7 +54,7 @@ pub const Lexer = struct {
         err = null;
         warn = null;
 
-        comptime var d_array = initArray(Token);
+        comptime var d_array = dynArray(Token);
         var token_stack = d_array.init();
 
         curr_token = null;
@@ -72,8 +72,9 @@ pub const Lexer = struct {
                 self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
                 if (token_stack.ptr) |ptr| {
+                    _ = ptr;
                     return .{
-                        .tokens = ptr,
+                        .tokens = token_stack,
                         .err = err,
                         .warn = warn,
                     };
@@ -123,8 +124,9 @@ pub const Lexer = struct {
                     }
 
                     if (token_stack.ptr) |ptr| {
+                        _ = ptr;
                         return .{
-                            .tokens = ptr,
+                            .tokens = token_stack,
                             .err = err,
                             .warn = warn,
                         };
@@ -164,22 +166,25 @@ pub const Lexer = struct {
             self.addCurrentToken(&token_stack, &curr_token, .TokenUnknow);
 
             if (token_stack.ptr) |ptr| {
+                _ = ptr;
                 return .{
-                    .tokens = ptr,
+                    .tokens = token_stack,
                     .err = err,
                     .warn = warn,
                 };
             }
         }
 
+        var tmp_array = dynArray(Token).init();
+
         return .{
-            .tokens = null,
+            .tokens = tmp_array,
             .err = err,
             .warn = warn,
         };
     }
 
-    fn addCurrentToken(self: *Self, token_stack: *initArray(Token), current_token: *?String, token_type: TokenType) void {
+    fn addCurrentToken(self: *Self, token_stack: *dynArray(Token), current_token: *?String, token_type: TokenType) void {
         if (current_token.*) |ct| {
             if (ct.buffer) |buf| {
                 if (!add_space_after_string) {
@@ -196,7 +201,7 @@ pub const Lexer = struct {
         }
     }
 
-    fn addNullToken(_: Self, token_stack: *initArray(Token), token_type: TokenType) void {
+    fn addNullToken(_: Self, token_stack: *dynArray(Token), token_type: TokenType) void {
         add_space_after_string = true;
         token_stack.push(.{
             .token_value = String.init(),

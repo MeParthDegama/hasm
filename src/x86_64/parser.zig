@@ -43,11 +43,26 @@ pub const Parser = struct {
             warn_count += 1;
         }
 
-        if (tokens_info.tokens) |toks| {
+        if (tokens_info.tokens.ptr) |toks| {
             printToken(toks);
+            self.parseLineType(toks);
+            tokens_info.tokens.deinit();
             return true;
         } else {
             return false;
+        }
+    }
+
+    pub fn parseLineType(_: Self, toks: []Token) void {
+        for (toks, 0..) |tok, tok_index| {
+            switch (tok_index) {
+                1 => {
+                    if (tok.token_type == .TokenColon) {
+                        std.debug.print("this is lable\n", .{});
+                    }
+                },
+                else => {},
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 /// dyn array
 const std = @import("std");
 
-pub fn initArray(comptime t: type) type {
+pub fn dynArray(comptime t: type) type {
     return struct {
         ptr: ?[]t,
 
@@ -32,6 +32,5 @@ pub fn initArray(comptime t: type) type {
         pub fn deinit(_: Self) void {
             a.deinit();
         }
-
     };
 }
