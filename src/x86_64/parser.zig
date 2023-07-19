@@ -24,14 +24,7 @@ pub const Parser = struct {
     }
 
     pub fn parse(self: *Self) void {
-        var l: i64 = 1;
-        while (self.next()) {
-            l += 1;
-            std.debug.print("parsing line {}...\n", .{l});
-            std.debug.print("\x1b[A", .{});
-            std.time.sleep(100000);
-        }
-        std.debug.print("\n", .{});
+        while (self.next()) {}
         if (err_count != 0) {
             common.errExit();
         }
