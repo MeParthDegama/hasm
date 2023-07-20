@@ -26,6 +26,7 @@ pub const Parser = struct {
     pub fn parse(self: *Self) void {
         while (self.next()) {}
         if (err_count != 0) {
+            log.print();
             common.errExit();
         }
     }
