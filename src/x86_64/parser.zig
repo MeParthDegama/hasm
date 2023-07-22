@@ -49,6 +49,10 @@ pub const Parser = struct {
 
 
             // make loop of parse tokne 
+            // like recursen of parse line type function 
+            // or make forward function, if parseLineTypeFwd
+            // call this function and call next function
+            // inside this function...
             self.parseLineType(toks);
             
             
