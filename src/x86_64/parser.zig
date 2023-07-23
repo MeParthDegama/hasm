@@ -45,17 +45,19 @@ pub const Parser = struct {
         }
 
         if (tokens_info.tokens.ptr) |toks| {
-            printToken(toks);
+            var r_tokens: ?[]Token = &[0]Token{};
+            var r_tokens_loop_count: usize = 0;
 
+            while (r_tokens) |t| {
+                var parsed_line_tokens = self.parseLineType(if (r_tokens_loop_count == 0) toks else t);
+                
+                std.debug.print("{} {}: ", .{tokens_info.line_no, parsed_line_tokens.line_type});
+                printToken(parsed_line_tokens.token);
+                r_tokens = parsed_line_tokens.r_token;
 
-            // make loop of parse tokne 
-            // like recursen of parse line type function 
-            // or make forward function, if parseLineTypeFwd
-            // call this function and call next function
-            // inside this function...
-            self.parseLineType(toks);
-            
-            
+                r_tokens_loop_count += 1;
+            }
+
             tokens_info.tokens.deinit();
             return true;
         } else {
@@ -63,17 +65,49 @@ pub const Parser = struct {
         }
     }
 
-    pub fn parseLineType(_: Self, toks: []Token) void {
+    const ParseLineStruct = struct {
+        token: []Token,
+        line_type: LineType,
+        r_token: ?[]Token,
+    };
+
+    const LineType = enum {
+        LineModulo,
+        LineLabel,
+        LineInstruction,
+        LineData,
+        LineUnknow,
+    };
+
+    pub fn parseLineType(_: Self, toks: []Token) ParseLineStruct {
+        var token_end: usize = toks.len;
+        var line_type: LineType = .LineUnknow;
+
         for (toks, 0..) |tok, tok_index| {
             switch (tok_index) {
+                0 => {
+                    if (tok.token_type == .TokenModulo) {
+                        token_end = toks.len;
+                        line_type = .LineModulo;
+                        break;
+                    }
+                },
                 1 => {
                     if (tok.token_type == .TokenColon) {
-                        std.debug.print("this is lable\n", .{});
+                        token_end = tok_index + 1;
+                        line_type = .LineLabel;
+                        break;
                     }
                 },
                 else => {},
             }
         }
+
+        return .{
+            .token = toks[0..token_end],
+            .line_type = line_type,
+            .r_token = if (token_end == toks.len) null else toks[token_end..],
+        };
     }
 
     pub fn printToken(toks: []Token) void {

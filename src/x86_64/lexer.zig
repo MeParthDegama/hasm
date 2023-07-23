@@ -22,6 +22,7 @@ pub const Token = struct {
 
 pub const TokensInfo = struct {
     tokens: dynArray(Token),
+    line_no: usize,
     err: ?Log.LogInfo,
     warn: ?Log.LogInfo,
 };
@@ -75,6 +76,7 @@ pub const Lexer = struct {
                     _ = ptr;
                     return .{
                         .tokens = token_stack,
+                        .line_no = curr_line - 1,
                         .err = err,
                         .warn = warn,
                     };
@@ -127,6 +129,7 @@ pub const Lexer = struct {
                         _ = ptr;
                         return .{
                             .tokens = token_stack,
+                            .line_no = curr_line - 1,
                             .err = err,
                             .warn = warn,
                         };
@@ -169,6 +172,7 @@ pub const Lexer = struct {
                 _ = ptr;
                 return .{
                     .tokens = token_stack,
+                    .line_no = curr_line,
                     .err = err,
                     .warn = warn,
                 };
@@ -179,6 +183,7 @@ pub const Lexer = struct {
 
         return .{
             .tokens = tmp_array,
+            .line_no = curr_line,
             .err = err,
             .warn = warn,
         };
