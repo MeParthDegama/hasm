@@ -50,10 +50,28 @@ pub const Parser = struct {
 
             while (r_tokens) |t| {
                 var parsed_line_tokens = self.parseLineType(if (r_tokens_loop_count == 0) toks else t);
-                
-                std.debug.print("{} {}: ", .{tokens_info.line_no, parsed_line_tokens.line_type});
-                printToken(parsed_line_tokens.token);
+
+                std.debug.print("{} {}: ", .{ tokens_info.line_no, parsed_line_tokens.line_type });
                 r_tokens = parsed_line_tokens.r_token;
+                printToken(parsed_line_tokens.token);
+
+                switch (parsed_line_tokens.line_type) {
+                    .LineModulo => {
+                        std.debug.print("parse modulo\n", .{});
+                    },
+                    .LineLabel => {
+                        std.debug.print("parse lable\n", .{});
+                    },
+                    .LineInstruction => {
+                        std.debug.print("parse instruction\n", .{});
+                    },
+                    .LineData => {
+                        std.debug.print("parse data\n", .{});
+                    },
+                    .LineUnknow => {
+                        std.debug.print("parse unknow\n", .{});
+                    },
+                }
 
                 r_tokens_loop_count += 1;
             }
@@ -89,6 +107,12 @@ pub const Parser = struct {
                     if (tok.token_type == .TokenModulo) {
                         token_end = toks.len;
                         line_type = .LineModulo;
+                        break;
+                    }
+
+                    if (tok.token_value.equString("db") or tok.token_value.equString("dw") or tok.token_value.equString("dd") or tok.token_value.equString("dq")) {
+                        token_end = toks.len;
+                        line_type = .LineData;
                         break;
                     }
                 },
